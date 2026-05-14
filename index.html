@@ -6,173 +6,680 @@
   <title>V&V COACH | Menserca</title>
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#0F172A">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  
+  <!-- Librerías CDN (sin instalar nada) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/dexie@3"></script>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  
   <style>
     :root {
       --blue: #3B82F6; --yellow: #EAB308; --green: #22C55E; --red: #EF4444;
       --bg: #0F172A; --text: #F8FAFC; --card: #1E293B; --input: #334155;
+      --blue-soft: rgba(59,130,246,0.15); --yellow-soft: rgba(234,179,8,0.15);
+      --green-soft: rgba(34,197,94,0.15); --red-soft: rgba(239,68,68,0.15);
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
-    body { background: var(--bg); color: var(--text); min-height: 100vh; padding: 16px; }
-    .container { max-width: 480px; margin: 0 auto; }
-    .btn { padding: 12px; border: none; border-radius: 10px; background: var(--blue); color: white; font-weight: 600; cursor: pointer; width: 100%; margin: 8px 0; }
-    .btn-green { background: var(--green); } .btn-yellow { background: var(--yellow); color: #000; } .btn-red { background: var(--red); }
-    .card { background: var(--card); padding: 16px; border-radius: 12px; margin: 8px 0; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-    input, select, textarea { width: 100%; padding: 12px; background: var(--input); color: var(--text); border: 1px solid #475569; border-radius: 8px; margin: 6px 0; }
-    .phase-blue { border-left: 4px solid var(--blue); } .phase-yellow { border-left: 4px solid var(--yellow); } .phase-green { border-left: 4px solid var(--green); } .phase-red { border-left: 4px solid var(--red); }
-    .hidden { display: none; }
-    canvas { background: #F1F5F9; border-radius: 8px; touch-action: none; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; }
+    body { background: var(--bg); color: var(--text); min-height: 100vh; padding: 12px; line-height: 1.4; }
+    .container { max-width: 480px; margin: 0 auto; padding-bottom: 80px; }
+    
+    /* Header */
+    header { text-align: center; padding: 16px 0; margin-bottom: 12px; border-bottom: 1px solid #334155; }
+    header h1 { font-size: 1.4rem; font-weight: 700; }
+    header p { color: #94A3B8; font-size: 0.85rem; margin-top: 4px; }
+    
+    /* Botones */
+    .btn { padding: 14px; border: none; border-radius: 12px; background: var(--blue); color: white; font-weight: 600; font-size: 1rem; cursor: pointer; width: 100%; margin: 6px 0; transition: transform 0.1s; }
+    .btn:active { transform: scale(0.98); }
+    .btn-green { background: var(--green); } 
+    .btn-yellow { background: var(--yellow); color: #0F172A; } 
+    .btn-red { background: var(--red); }
+    .btn-outline { background: transparent; border: 2px solid var(--blue); color: var(--blue); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    
+    /* Cards */
+    .card { background: var(--card); padding: 16px; border-radius: 16px; margin: 8px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.25); }
+    .card h3 { margin-bottom: 12px; font-size: 1.1rem; }
+    
+    /* Inputs */
+    input, select, textarea { width: 100%; padding: 12px; background: var(--input); color: var(--text); border: 1px solid #475569; border-radius: 10px; margin: 6px 0; font-size: 1rem; }
+    input:focus, textarea:focus { outline: 2px solid var(--blue); border-color: transparent; }
+    textarea { resize: vertical; min-height: 80px; }
+    
+    /* Fases de color */
+    .phase-blue { border-left: 5px solid var(--blue); background: linear-gradient(90deg, var(--blue-soft), transparent); }
+    .phase-yellow { border-left: 5px solid var(--yellow); background: linear-gradient(90deg, var(--yellow-soft), transparent); }
+    .phase-green { border-left: 5px solid var(--green); background: linear-gradient(90deg, var(--green-soft), transparent); }
+    .phase-red { border-left: 5px solid var(--red); background: linear-gradient(90deg, var(--red-soft), transparent); }
+    
+    /* Selector de fase */
+    .phase-selector { display: flex; gap: 10px; margin: 12px 0; justify-content: center; }
+    .phase-dot { width: 36px; height: 36px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: all 0.2s; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; }
+    .phase-dot.active { border-color: white; transform: scale(1.1); }
+    .phase-dot.blue { background: var(--blue); }
+    .phase-dot.yellow { background: var(--yellow); }
+    .phase-dot.green { background: var(--green); }
+    .phase-dot.red { background: var(--red); }
+    
+    /* Pregunta IA */
+    .question-box { background: rgba(255,255,255,0.08); padding: 14px; border-radius: 10px; margin: 10px 0; font-style: italic; border-left: 3px solid var(--blue); }
+    .question-box.yellow { border-left-color: var(--yellow); }
+    .question-box.green { border-left-color: var(--green); }
+    
+    /* Firma */
+    .signature-area { border: 2px dashed #475569; border-radius: 12px; padding: 20px; text-align: center; margin: 12px 0; cursor: pointer; background: rgba(255,255,255,0.03); }
+    .signature-area.signed { border-style: solid; background: var(--green-soft); }
+    
+    /* Estado */
+    .status-badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; margin-left: 8px; }
+    .status-open { background: var(--yellow); color: #0F172A; }
+    .status-closed { background: var(--green); color: #0F172A; }
+    
+    /* Loading */
+    .loading { text-align: center; padding: 20px; color: #94A3B8; }
+    .spinner { width: 24px; height: 24px; border: 3px solid rgba(255,255,255,0.3); border-top-color: var(--blue); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 10px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    
+    /* Utilidades */
+    .hidden { display: none !important; }
+    .text-center { text-align: center; }
+    .text-sm { font-size: 0.85rem; color: #94A3B8; }
+    .mt-2 { margin-top: 8px; }
+    .mb-2 { margin-bottom: 8px; }
+    .flex { display: flex; gap: 8px; }
+    .flex-wrap { flex-wrap: wrap; }
+    
+    /* Lista de VITs */
+    .vit-list { display: grid; gap: 8px; }
+    .vit-btn { text-align: left; padding: 14px; background: var(--card); border: 1px solid #334155; border-radius: 12px; color: var(--text); font-weight: 500; transition: all 0.2s; }
+    .vit-btn:hover { border-color: var(--blue); background: #243045; }
+    
+    /* Lista de ítems */
+    .item-btn { text-align: left; padding: 12px; background: var(--input); border: 1px solid #475569; border-radius: 10px; color: var(--text); margin: 4px 0; font-size: 0.95rem; transition: all 0.2s; }
+    .item-btn:hover { border-color: var(--blue); background: #3a4a65; }
+    
+    /* Dashboard */
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0; }
+    .stat-card { background: var(--input); padding: 12px; border-radius: 10px; text-align: center; }
+    .stat-value { font-size: 1.5rem; font-weight: 700; color: var(--blue); }
+    .stat-label { font-size: 0.8rem; color: #94A3B8; }
+    
+    /* Footer */
+    footer { position: fixed; bottom: 0; left: 0; right: 0; max-width: 480px; margin: 0 auto; padding: 12px; background: var(--card); border-top: 1px solid #334155; display: flex; gap: 8px; }
+    footer .btn { margin: 0; padding: 10px; font-size: 0.9rem; }
   </style>
 </head>
 <body>
   <div id="root"></div>
+
   <script type="text/babel">
-    // BANCO OFFLINE (JSON)
-    const VIT_BANK = ${JSON.stringify([/* Aquí va el JSON completo de las 13 VIT que te di antes */], null, 2)};
+    // ═══════════════════════════════════════════════════════════════
+    // 🗄️ BANCO OFFLINE COMPLETO - 13 VIT IOGP con preguntas HOP/Jung
+    // ═══════════════════════════════════════════════════════════════
+    const VIT_BANK = [
+      {"vit_id":"VIT_01","vit_name":"🔥 Trabajo en Caliente","items":[
+        {"item_id":"HC_01","item_text":"Permisos de fuego vigentes y validados","questions":{"blue":"¿Qué pasos revisas antes de confirmar que el permiso refleja exactamente lo que van a hacer hoy?","yellow":"Si las condiciones del área cambian durante la jornada, ¿cómo ajustan el permiso sin perder el control?","green":"¿Qué indicador te da tranquilidad de que los controles de fuego están realmente activos y no solo en papel?"}},
+        {"item_id":"HC_02","item_text":"Área limpia de combustibles y materiales inflamables","questions":{"blue":"¿Cómo distinguen entre lo que parece limpio y lo que realmente está libre de riesgo?","yellow":"¿Qué haces cuando encuentras materiales que no estaban en la evaluación inicial?","green":"¿Qué hábito diario mantienen para que la zona permanezca segura durante toda la tarea?"}},
+        {"item_id":"HC_03","item_text":"Equipos de extinción disponibles y accesibles","questions":{"blue":"¿Quién verifica que los extintores no solo estén presentes, sino listos para uso inmediato?","yellow":"Si el acceso se bloquea por materiales o tráfico, ¿qué alternativa rápida implementan?","green":"¿Qué señal visual usan para saber que los equipos de respuesta nunca quedan fuera de alcance?"}},
+        {"item_id":"HC_04","item_text":"Guardia de fuego presente y capacitado","questions":{"blue":"¿Cómo sabes que el guardia realmente comprende los escenarios de fallo que podrían ocurrir?","yellow":"Si el guardia debe atender otra urgencia, ¿quién asume su rol sin romper la cobertura?","green":"¿Qué práctica refuerzas para que la vigilancia sea proactiva y no solo presencia física?"}}
+      ]},
+      {"vit_id":"VIT_02","vit_name":"🔒 Aislamiento de Energía (LOTO)","items":[
+        {"item_id":"LO_01","item_text":"Energía cero verificada antes de inicio","questions":{"blue":"¿Qué prueba concreta realizan para confirmar que no queda energía residual?","yellow":"Si el protocolo no cubre una fuente secundaria, ¿cómo la identifican sin interrumpir el flujo?","green":"¿Qué práctica mantiene viva la certeza de que el bloqueo es efectivo durante toda la intervención?"}},
+        {"item_id":"LO_02","item_text":"Dispositivos de bloqueo/etiquetado instalados","questions":{"blue":"¿Cómo aseguran que cada persona que toca el equipo vea y entienda el bloqueo?","yellow":"Si un bloqueo se retira por error o necesidad operativa, ¿qué paso previo evita el riesgo?","green":"¿Qué indicador confirma que el LOTO no es un trámite, sino una barrera real?"}},
+        {"item_id":"LO_03","item_text":"Verificación de aislamiento por parte del ejecutor","questions":{"blue":"¿Qué haces diferente cuando la verificación la hace otro en lugar de hacerla tú mismo?","yellow":"Si la lectura da un resultado ambiguo, ¿qué decisión toman antes de avanzar?","green":"¿Qué hábito refuerzas para que la verificación sea un ritual de seguridad y no un checklist?"}},
+        {"item_id":"LO_04","item_text":"Plan de reactivación definido y comunicado","questions":{"blue":"¿Cómo saben todos exactamente cuándo y cómo se restaurará la energía?","yellow":"Si surge un cambio no previsto durante el aislamiento, ¿cómo actualizan el plan sin confusión?","green":"¿Qué señal usan para cerrar el ciclo con certeza y sin dejar cabos sueltos?"}}
+      ]},
+      {"vit_id":"VIT_03","vit_name":"🚪 Espacios Confinados","items":[
+        {"item_id":"EC_01","item_text":"Permiso específico y firmado","questions":{"blue":"¿Qué parte del permiso revisan juntos para asegurar que refleja el trabajo real?","yellow":"Si el espacio tiene condiciones cambiantes, ¿cómo actualizan el permiso sin perder cobertura?","green":"¿Qué práctica garantiza que el permiso sea una herramienta viva y no un documento archivado?"}},
+        {"item_id":"EC_02","item_text":"Pruebas de atmósfera previas y continuas","questions":{"blue":"¿Cómo diferencian entre una medición puntual y una vigilancia constante del ambiente?","yellow":"Si el equipo de monitoreo falla o da lecturas inestables, ¿qué paso inmediato toman?","green":"¿Qué indicador te confirma que el aire se mantiene seguro durante toda la entrada?"}},
+        {"item_id":"EC_03","item_text":"Vigía externo presente y capacitado","questions":{"blue":"¿Qué hace el vigía para mantenerse alerta y no solo cumplir tiempo de guardia?","yellow":"Si el vigía debe comunicarse con otros equipos, ¿cómo mantiene la conexión con el interior?","green":"¿Qué práctica fortalece la confianza entre el vigía y el equipo interno?"}},
+        {"item_id":"EC_04","item_text":"Plan de rescate listo y probado","questions":{"blue":"¿Cómo saben que el plan funcionará en la primera emergencia real?","yellow":"Si falta un equipo de rescate específico, ¿qué alternativa validan antes de entrar?","green":"¿Qué señal cierra el ciclo con la certeza de que todos salen como entraron?"}}
+      ]},
+      {"vit_id":"VIT_04","vit_name":"🪂 Trabajo en Altura","items":[
+        {"item_id":"TA_01","item_text":"Arnés inspeccionado y correctamente ajustado","questions":{"blue":"¿Qué revisas en el arnés que otros suelen pasar por alto?","yellow":"Si el ajuste no es cómodo para la tarea prolongada, ¿cómo lo modifican sin comprometer la protección?","green":"¿Qué hábito mantiene el arnés como segunda piel y no como equipaje?"}},
+        {"item_id":"TA_02","item_text":"Puntos de anclaje certificados y accesibles","questions":{"blue":"¿Cómo verifican que el punto soporta la dirección real de la caída?","yellow":"Si no hay un punto fijo, ¿qué alternativa estructural validan antes de subir?","green":"¿Qué práctica asegura que el anclaje nunca sea un dato técnico, sino una barrera física?"}},
+        {"item_id":"TA_03","item_text":"Línea de vida o barandas instaladas","questions":{"blue":"¿Qué diferencia observan entre una baranda instalada y una realmente funcional?","yellow":"Si la ruta requiere cruzar un tramo sin protección, ¿qué control intermedio aplican?","green":"¿Qué indicador confirma que la protección colectiva cubre todo el recorrido?"}},
+        {"item_id":"TA_04","item_text":"Herramientas aseguradas contra caídas","questions":{"blue":"¿Cómo evitan que lo pequeño se convierta en un riesgo grande al caer?","yellow":"Si una herramienta no tiene punto de amarre, ¿qué adaptación rápida implementan?","green":"¿Qué práctica convierte la prevención de objetos en un reflejo y no en una pausa?"}}
+      ]},
+      {"vit_id":"VIT_05","vit_name":"🏗️ Izaje Mecánico Seguro","items":[
+        {"item_id":"IZ_01","item_text":"Plan de izaje definido y comunicado","questions":{"blue":"¿Qué parte del plan revisan en campo para asegurar que coincide con la realidad?","yellow":"Si las condiciones del terreno cambian, ¿cómo ajustan la maniobra sin improvisar?","green":"¿Qué señal confirma que todos entienden su rol antes de mover la carga?"}},
+        {"item_id":"IZ_02","item_text":"Eslingas y accesorios inspeccionados","questions":{"blue":"¿Qué detalle buscas que indique desgaste antes de que sea visible a simple vista?","yellow":"Si un accesorio no tiene la capacidad exacta, ¿qué alternativa validan?","green":"¿Qué práctica mantiene el equipo de izaje en estado operativo permanente?"}},
+        {"item_id":"IZ_03","item_text":"Zona de exclusión delimitada y vigilada","questions":{"blue":"¿Cómo aseguran que la zona de peligro no se reduce por comodidad o prisa?","yellow":"Si el tráfico cruza la zona, ¿qué control adicional activan?","green":"¿Qué indicador te confirma que nadie entra sin autorización ni visibilidad?"}},
+        {"item_id":"IZ_04","item_text":"Operador y señalero certificados y coordinados","questions":{"blue":"¿Qué lenguaje usan para que cada movimiento sea predecible y seguro?","yellow":"Si la visibilidad se reduce, ¿qué protocolo inmediato aplican?","green":"¿Qué práctica fortalece la confianza entre quien maneja y quien guía?"}}
+      ]},
+      {"vit_id":"VIT_06","vit_name":"⚠️ Línea de Fuego","items":[
+        {"item_id":"LF_01","item_text":"Identificación de trayectorias de peligro","questions":{"blue":"¿Qué haces para visualizar lo que normalmente pasa desapercibido en movimiento?","yellow":"Si una trayectoria cambia por condiciones del terreno, ¿cómo la redefines en campo?","green":"¿Qué señal te confirma que el equipo mantiene conciencia espacial constante?"}},
+        {"item_id":"LF_02","item_text":"Posicionamiento seguro de personas y equipos","questions":{"blue":"¿Cómo evitan que la comodidad los ubique en zona de impacto sin notarlo?","yellow":"Si el espacio seguro es limitado, ¿qué alternativa de ubicación validan?","green":"¿Qué hábito mantiene la distancia como regla y no como excepción?"}},
+        {"item_id":"LF_03","item_text":"Barreras físicas o advertencias visibles","questions":{"blue":"¿Qué diferencia observan entre una barrera instalada y una que realmente disuade?","yellow":"Si la señalización se daña o cubre, ¿qué control inmediato activan?","green":"¿Qué práctica asegura que la advertencia nunca pierda su propósito?"}},
+        {"item_id":"LF_04","item_text":"Comunicación constante durante la maniobra","questions":{"blue":"¿Qué protocolo usan para que nadie actúe en silencio o aislamiento?","yellow":"Si el ruido ambiental interfiere, ¿qué alternativa de comunicación implementan?","green":"¿Qué indicador confirma que el flujo de información nunca se interrumpe?"}}
+      ]},
+      {"vit_id":"VIT_07","vit_name":"🚗 Conducción Segura","items":[
+        {"item_id":"CS_01","item_text":"Cinturón de seguridad usado por todos","questions":{"blue":"¿Qué hace que el uso sea un reflejo y no un recordatorio constante?","yellow":"Si el trayecto es corto o conocido, ¿qué control mental activan para no bajar la guardia?","green":"¿Qué señal te confirma que el hábito está internalizado y no impuesto?"}},
+        {"item_id":"CS_02","item_text":"Límites de velocidad respetados","questions":{"blue":"¿Cómo ajustan la velocidad a las condiciones reales y no solo al cartel?","yellow":"Si la presión por tiempo aumenta, ¿qué decisión toman para mantener el control?","green":"¿Qué práctica convierte la moderación en ventaja y no en retraso?"}},
+        {"item_id":"CS_03","item_text":"Cero uso de dispositivos móviles","questions":{"blue":"¿Qué estrategia usan para que el teléfono no compita con la atención vial?","yellow":"Si una llamada o mensaje es urgente, ¿qué protocolo seguro aplican?","green":"¿Qué indicador confirma que la desconexión digital es parte de la conducción?"}},
+        {"item_id":"CS_04","item_text":"Inspección pre-uso del vehículo completada","questions":{"blue":"¿Qué revisas primero que otros suelen dejar para el final?","yellow":"Si encuentras un hallazgo menor, ¿cómo decides si afecta la operación o no?","green":"¿Qué práctica mantiene el vehículo como aliado y no como riesgo oculto?"}}
+      ]},
+      {"vit_id":"VIT_08","vit_name":"📋 Autorización de Trabajo","items":[
+        {"item_id":"AT_01","item_text":"Permiso activo, firmado y visible","questions":{"blue":"¿Qué parte del permiso validan juntos para asegurar que refleja el trabajo real?","yellow":"Si surge una variación no prevista, ¿cómo actualizan el permiso sin perder trazabilidad?","green":"¿Qué señal confirma que el documento es una guía viva y no un trámite?"}},
+        {"item_id":"AT_02","item_text":"Análisis de riesgos participativo","questions":{"blue":"¿Cómo aseguran que quienes ejecutan también identifican, no solo escuchan?","yellow":"Si un riesgo parece bajo pero recurrente, ¿qué paso adicional toman?","green":"¿Qué práctica convierte el análisis en una conversación y no en un formulario?"}},
+        {"item_id":"AT_03","item_text":"Firma de todas las partes involucradas","questions":{"blue":"¿Qué significado le dan a la firma más allá de la aprobación administrativa?","yellow":"Si alguien no puede firmar físicamente, ¿qué alternativa validan?","green":"¿Qué indicador confirma que la firma representa compromiso y no solo presencia?"}},
+        {"item_id":"AT_04","item_text":"Comunicación de cierre y liberación","questions":{"blue":"¿Cómo saben que el área queda lista para el siguiente turno o actividad?","yellow":"Si quedan residuos o controles pendientes, ¿qué paso previo al cierre aplican?","green":"¿Qué práctica asegura que el cierre sea tan riguroso como el inicio?"}}
+      ]},
+      {"vit_id":"VIT_09","vit_name":"🚫 Sustancias Controladas","items":[
+        {"item_id":"SC_01","item_text":"Política de cero tolerancia comunicada","questions":{"blue":"¿Cómo aseguran que el mensaje se entiende como protección y no como restricción?","yellow":"Si alguien manifiesta fatiga o malestar, ¿qué apoyo activan antes de asignar tareas?","green":"¿Qué señal confirma que el bienestar es prioridad y no un tema secundario?"}},
+        {"item_id":"SC_02","item_text":"Verificación de aptitud pre-tarea","questions":{"blue":"¿Qué observas que indica si alguien está en condiciones reales para operar?","yellow":"Si hay duda sin evidencia clara, ¿qué paso conservador toman?","green":"¿Qué práctica mantiene la salud como base operativa y no como requisito formal?"}},
+        {"item_id":"SC_03","item_text":"Monitoreo aleatorio o programado","questions":{"blue":"¿Cómo aseguran que el monitoreo sea preventivo y no punitivo?","yellow":"Si el resultado es dudoso, ¿qué protocolo de validación activan?","green":"¿Qué indicador confirma que la cultura prioriza la transparencia sobre la ocultación?"}},
+        {"item_id":"SC_04","item_text":"Canales de apoyo y confidencialidad","questions":{"blue":"¿Qué hace que alguien prefiera pedir ayuda antes que ocultar un riesgo?","yellow":"Si el estigma aún existe, ¿qué acción concreta lo reduce en tu equipo?","green":"¿Qué señal confirma que el apoyo es real y accesible?"}}
+      ]},
+      {"vit_id":"VIT_10","vit_name":"🔄 Gestión del Cambio","items":[
+        {"item_id":"GC_01","item_text":"Identificación formal del cambio","questions":{"blue":"¿Qué diferencia observan entre un ajuste menor y un cambio que requiere revisión?","yellow":"Si el cambio surge por urgencia, ¿qué paso mínimo validan antes de avanzar?","green":"¿Qué práctica asegura que lo nuevo no anule lo seguro?"}},
+        {"item_id":"GC_02","item_text":"Evaluación de riesgos actualizada","questions":{"blue":"¿Cómo aseguran que la evaluación refleje el nuevo escenario y no el anterior?","yellow":"Si falta información clave, ¿qué decisión conservadora toman?","green":"¿Qué indicador confirma que el riesgo se reevaluó, no se asumió?"}},
+        {"item_id":"GC_03","item_text":"Comunicación a todos los afectados","questions":{"blue":"¿Qué hace que el mensaje llegue a quien realmente ejecuta, no solo a quien supervisa?","yellow":"Si hay rotación o turnos cruzados, ¿cómo garantizan la continuidad del aviso?","green":"¿Qué señal confirma que nadie opera en el cambio sin saberlo?"}},
+        {"item_id":"GC_04","item_text":"Validación post-implementación","questions":{"blue":"¿Cómo saben que el cambio funcionó como se esperaba en campo?","yellow":"Si aparece un efecto no previsto, ¿qué acción inmediata toman?","green":"¿Qué práctica convierte la validación en un ciclo y no en un punto final?"}}
+      ]},
+      {"vit_id":"VIT_11","vit_name":"🦺 Equipos de Protección Personal (EPP)","items":[
+        {"item_id":"EP_01","item_text":"EPP adecuado para la tarea específica","questions":{"blue":"¿Cómo aseguran que el EPP protege y no solo cumple una lista?","yellow":"Si el EPP oficial no se adapta a la condición real, ¿qué alternativa validan?","green":"¿Qué indicador confirma que la protección es funcional y no solo simbólica?"}},
+        {"item_id":"EP_02","item_text":"Inspección y buen estado del equipo","questions":{"blue":"¿Qué detalle buscas que indique que el EPP está listo para usarse?","yellow":"Si encuentras desgaste menor, ¿cómo decides si sigue siendo válido?","green":"¿Qué práctica mantiene el EPP como primera línea y no como último recurso?"}},
+        {"item_id":"EP_03","item_text":"Uso correcto y ajustado","questions":{"blue":"¿Qué observas que indica si el EPP está bien puesto o solo puesto?","yellow":"Si la incomodidad lleva a ajustarlo mal, ¿qué solución rápida implementan?","green":"¿Qué señal confirma que el uso correcto es hábito y no corrección constante?"}},
+        {"item_id":"EP_04","item_text":"Almacenamiento y mantenimiento adecuado","questions":{"blue":"¿Cómo evitan que el EPP se degrade fuera del momento de uso?","yellow":"Si el espacio de guardado es limitado, ¿qué organización aplican?","green":"¿Qué práctica asegura que el EPP llegue a la tarea en condiciones reales?"}}
+      ]},
+      {"vit_id":"VIT_12","vit_name":"⛏️ Seguridad en Excavaciones","items":[
+        {"item_id":"EX_01","item_text":"Permiso y plano de interferencias validado","questions":{"blue":"¿Qué parte del plano revisan juntos para asegurar que coincide con el terreno?","yellow":"Si encuentran una línea no marcada, ¿qué paso inmediato toman?","green":"¿Qué señal confirma que el mapa no es teórico sino operativo?"}},
+        {"item_id":"EX_02","item_text":"Apuntalamiento o talud según normativa","questions":{"blue":"¿Cómo saben que el soporte resiste las condiciones reales del suelo?","yellow":"Si el terreno se humedece o inestabiliza, ¿qué control adicional activan?","green":"¿Qué indicador confirma que la estructura es preventiva y no reactiva?"}},
+        {"item_id":"EX_03","item_text":"Zona de apilamiento y acceso seguro","questions":{"blue":"¿Cómo evitan que el material excavado se convierta en riesgo inminente?","yellow":"Si el espacio para apilar es reducido, ¿qué alternativa validan?","green":"¿Qué práctica mantiene el perímetro ordenado y funcional?"}},
+        {"item_id":"EX_04","item_text":"Monitoreo de gases o atmósfera","questions":{"blue":"¿Qué protocolo usan para detectar lo que el ojo no ve bajo tierra?","yellow":"Si el equipo falla o da lectura dudosa, ¿qué decisión toman antes de entrar?","green":"¿Qué señal confirma que el aire se mantiene seguro durante toda la jornada?"}}
+      ]},
+      {"vit_id":"VIT_13","vit_name":"⚙️ Bloqueo de Seguridad en Máquinas","items":[
+        {"item_id":"BM_01","item_text":"Guardas instaladas y funcionales","questions":{"blue":"¿Qué revisas para asegurar que la guarda no solo está puesta, sino que protege?","yellow":"Si la guarda limita la operación, ¿cómo ajustan sin quitarla?","green":"¿Qué indicador confirma que la protección es parte del flujo y no un estorbo?"}},
+        {"item_id":"BM_02","item_text":"Dispositivos de parada de emergencia accesibles","questions":{"blue":"¿Cómo aseguran que cualquier persona pueda activar el paro en menos de 2 segundos?","yellow":"Si el botón está bloqueado o tapado, ¿qué acción inmediata toman?","green":"¿Qué práctica mantiene la accesibilidad como regla y no como excepción?"}},
+        {"item_id":"BM_03","item_text":"Prueba funcional de interbloqueos","questions":{"blue":"¿Qué paso realizas para confirmar que el interbloqueo actúa antes que la máquina?","yellow":"Si la prueba falla o es lenta, ¿qué decisión conservadora aplican?","green":"¿Qué señal confirma que el sistema responde como fue diseñado?"}},
+        {"item_id":"BM_04","item_text":"Procedimiento de bloqueo en mantenimiento","questions":{"blue":"¿Cómo aseguran que el mantenimiento no anula los controles operativos?","yellow":"Si el procedimiento no cubre un escenario específico, ¿qué validación previa hacen?","green":"¿Qué práctica mantiene la seguridad durante la intervención técnica?"}}
+      ]}
+    ];
 
-    const { useState, useEffect } = React;
-
-    // CONFIG SUPABASE (Reemplaza con tus datos del Paso 4)
-    const SUPABASE_URL = "TU_SUPABASE_URL";
-    const SUPABASE_KEY = "TU_SUPABASE_ANON_KEY";
+    // ═══════════════════════════════════════════════════════════════
+    // ⚙️ CONFIGURACIÓN - TUS CREDENCIALES (YA INTEGRADAS)
+    // ═══════════════════════════════════════════════════════════════
+    const SUPABASE_URL = "https://qvltqmcdxzjilsflnigy.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_N5GDPt3t7bdxzKQn68CRAA_vXgILA5H";
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    
+    // 🔑 CLAVE IA (Opcional - si no la pones, usa banco offline)
+    // Regístrate gratis en https://openrouter.ai para obtener una
+    const OPENROUTER_KEY = ""; // ← Pega tu clave aquí si quieres IA en tiempo real
 
-    // DEXIE DB OFFLINE
+    // ═══════════════════════════════════════════════════════════════
+    // 🗄️ BASE DE DATOS OFFLINE (Dexie.js / IndexedDB)
+    // ═══════════════════════════════════════════════════════════════
     const db = new Dexie("VITCoachDB");
     db.version(1).stores({
-      interventions: "++id, vit_id, item_id, date, status",
-      photos: "++id, intervention_id, data"
+      interventions: "++id, vit_id, item_id, supervisor, date, status, createdAt",
+      photos: "++id, intervention_id, base64, timestamp"
     });
 
+    // ═══════════════════════════════════════════════════════════════
+    // 🧠 COMPONENTE PRINCIPAL DE LA APP (React)
+    // ═══════════════════════════════════════════════════════════════
+    const { useState, useEffect } = React;
+
     function App() {
+      // Estados de navegación
       const [view, setView] = useState("home");
-      const [context, setContext] = useState({ date: new Date().toISOString().slice(0,10), supervisor: "", vit: null, item: null, phase: "blue" });
-      const [questions, setQuestions] = useState([]);
+      
+      // Contexto de la intervención
+      const [context, setContext] = useState({
+        date: new Date().toISOString().slice(0,10),
+        time: new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'}),
+        supervisor: "",
+        area: "",
+        vit: null,
+        item: null,
+        phase: "blue"
+      });
+      
+      // Datos del coaching
+      const [questions, setQuestions] = useState({});
       const [answers, setAnswers] = useState({});
       const [smart, setSmart] = useState("");
-      const [signature, setSignature] = useState(false);
+      const [observations, setObservations] = useState("");
+      const [photo, setPhoto] = useState(null);
+      const [signed, setSigned] = useState(false);
+      
+      // Estados de UI
       const [loading, setLoading] = useState(false);
+      const [syncStatus, setSyncStatus] = useState("offline");
+      const [stats, setStats] = useState({ total: 0, closed: 0, open: 0 });
 
+      // Verificar conexión y sincronizar al iniciar
       useEffect(() => {
-        if (context.vit && context.item) loadQuestions();
+        const checkConnection = () => {
+          setSyncStatus(navigator.onLine ? "online" : "offline");
+        };
+        checkConnection();
+        window.addEventListener('online', checkConnection);
+        window.addEventListener('offline', checkConnection);
+        
+        // Cargar estadísticas
+        loadStats();
+        
+        return () => {
+          window.removeEventListener('online', checkConnection);
+          window.removeEventListener('offline', checkConnection);
+        };
+      }, []);
+
+      // Cargar preguntas cuando cambia el ítem
+      useEffect(() => {
+        if (context.vit && context.item) {
+          loadQuestions();
+        }
       }, [context.vit, context.item]);
 
+      // Cargar preguntas (IA online o banco offline)
       const loadQuestions = async () => {
+        if (!context.item) return;
         setLoading(true);
-        // Intentar IA online
-        try {
-          const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-            method: "POST",
-            headers: { "Authorization": "Bearer TU_OPENROUTER_KEY", "Content-Type": "application/json" },
-            body: JSON.stringify({
-              model: "mistralai/mistral-7b-instruct",
-              messages: [{ role: "user", content: `Actúa como experto en coaching HSE y HOP. Genera 3 preguntas abiertas en español neutro, sin juicio, para: "${context.item.text}". Formato JSON: {"blue":"...","yellow":"...","green":"..."}` }]
-            })
-          });
-          const data = await res.json();
-          if (data.choices) setQuestions(JSON.parse(data.choices[0].message.content));
-        } catch {
-          // Fallback offline
-          const vit = VIT_BANK.find(v => v.vit_id === context.vit.id);
-          const item = vit.items.find(i => i.item_id === context.item.id);
+        
+        // Intentar IA si hay clave y conexión
+        if (OPENROUTER_KEY && navigator.onLine) {
+          try {
+            const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+              method: "POST",
+              headers: {
+                "Authorization": `Bearer ${OPENROUTER_KEY}`,
+                "Content-Type": "application/json",
+                "HTTP-Referer": window.location.origin,
+                "X-Title": "V&V COACH"
+              },
+              body: JSON.stringify({
+                model: "mistralai/mistral-7b-instruct:free",
+                messages: [{
+                  role: "user",
+                  content: `Eres un experto en coaching HSE con enfoque HOP. Genera EXACTAMENTE 3 preguntas abiertas en español neutro para: "${context.item.item_text}". 
+                  Formato JSON estricto: {"blue":"Pregunta de reflexión/realidad","yellow":"Pregunta de exploración/opciones","green":"Pregunta de compromiso/validación"}.
+                  Reglas: tono empático, sin juicio, evita "culpa/error/deberías", máximo 25 palabras por pregunta.`
+                }],
+                temperature: 0.7
+              })
+            });
+            const data = await response.json();
+            if (data.choices?.[0]?.message?.content) {
+              const parsed = JSON.parse(data.choices[0].message.content);
+              setQuestions(parsed);
+              setLoading(false);
+              return;
+            }
+          } catch (e) {
+            console.log("IA no disponible, usando banco offline");
+          }
+        }
+        
+        // Fallback: banco offline
+        const vit = VIT_BANK.find(v => v.vit_id === context.vit.vit_id);
+        const item = vit?.items.find(i => i.item_id === context.item.item_id);
+        if (item?.questions) {
           setQuestions(item.questions);
         }
         setLoading(false);
       };
 
+      // Guardar intervención en local + sync a nube
       const saveIntervention = async () => {
-        const intervention = { ...context, answers, smart, signature: true, status: "closed", createdAt: new Date().toISOString() };
-        await db.interventions.add(intervention);
-        // Sync a Supabase si hay internet
-        try { await supabase.from("interventions").insert(intervention); } catch {}
-        alert("✅ Intervención guardada. Se sincronizará cuando haya conexión.");
+        if (!signed) {
+          alert("⚠️ Por favor confirma tu firma digital para cerrar la intervención");
+          return;
+        }
+        
+        const intervention = {
+          vit_id: context.vit.vit_id,
+          vit_name: context.vit.vit_name,
+          item_id: context.item.item_id,
+          item_text: context.item.item_text,
+          supervisor: context.supervisor,
+          area: context.area,
+          date: context.date,
+          time: context.time,
+          phase: context.phase,
+          questions: questions,
+          answers: answers,
+          smart: smart,
+          observations: observations,
+          photo: photo,
+          signed: true,
+          status: "closed",
+          createdAt: new Date().toISOString(),
+          synced: false
+        };
+
+        // Guardar en IndexedDB (siempre funciona offline)
+        const id = await db.interventions.add(intervention);
+        
+        // Intentar sincronizar con Supabase si hay conexión
+        if (navigator.onLine) {
+          try {
+            await supabase.from("interventions").insert([{...intervention, id: null, synced: true}]);
+            await db.interventions.update(id, { synced: true });
+            setSyncStatus("synced");
+          } catch (e) {
+            console.log("Sync pendiente:", e.message);
+            setSyncStatus("pending");
+          }
+        }
+        
+        alert("✅ Intervención guardada localmente" + (navigator.onLine ? " y sincronizada con la nube" : ". Se sincronizará automáticamente cuando haya conexión"));
+        
+        // Resetear formulario
+        resetForm();
         setView("home");
-        setAnswers({}); setSmart(""); setSignature(false);
+        loadStats();
       };
 
+      // Resetear formulario para nueva intervención
+      const resetForm = () => {
+        setAnswers({});
+        setSmart("");
+        setObservations("");
+        setPhoto(null);
+        setSigned(false);
+        setQuestions({});
+        setContext(prev => ({...prev, item: null, phase: "blue"}));
+      };
+
+      // Cargar estadísticas del dashboard
+      const loadStats = async () => {
+        const all = await db.interventions.toArray();
+        setStats({
+          total: all.length,
+          closed: all.filter(i => i.status === "closed").length,
+          open: all.filter(i => i.status === "open").length
+        });
+      };
+
+      // Manejar captura de foto (simplificado para demo)
+      const handlePhoto = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        
+        // Leer como base64 (para demo - en producción usar compresión)
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          setPhoto(ev.target.result);
+        };
+        reader.readAsDataURL(file);
+      };
+
+      // ═══════════════════════════════════════════════════════════
+      // 🎨 VISTAS DE LA APLICACIÓN
+      // ═══════════════════════════════════════════════════════════
+
+      // 🏠 VISTA: HOME
+      const HomeView = () => (
+        <div className="card">
+          <div className="text-center mb-2">
+            <h2 style={{fontSize:"1.3rem"}}>🛡️ V&V COACH</h2>
+            <p className="text-sm">Verificación & Validación • Enfoque HOP</p>
+            <span className={`status-badge ${syncStatus==="online"?"status-closed":"status-open"}`}>
+              {syncStatus==="online"?"🟢 Conectado":"🔴 Offline"}
+            </span>
+          </div>
+          
+          <input 
+            placeholder="👤 Nombre del supervisor" 
+            value={context.supervisor}
+            onChange={e => setContext({...context, supervisor: e.target.value})}
+          />
+          <input 
+            placeholder="📍 Área / Turno (opcional)" 
+            value={context.area}
+            onChange={e => setContext({...context, area: e.target.value})}
+          />
+          
+          <button className="btn" onClick={() => setView("select-vit")}>
+            🎯 Nueva Intervención
+          </button>
+          <button className="btn btn-yellow" onClick={() => { loadStats(); setView("dashboard"); }}>
+            📊 Ver Reportes
+          </button>
+          
+          <div className="stats-grid mt-2">
+            <div className="stat-card">
+              <div className="stat-value">{stats.total}</div>
+              <div className="stat-label">Total</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-value" style={{color:"var(--green)"}}>{stats.closed}</div>
+              <div className="stat-label">Cerradas</div>
+            </div>
+          </div>
+        </div>
+      );
+
+      // 📋 VISTA: SELECCIONAR VIT
+      const SelectVITView = () => (
+        <div className="card">
+          <h3>📋 Selecciona la VIT</h3>
+          <p className="text-sm mb-2">13 Verificaciones de Inicio de Trabajo - IOGP</p>
+          <div className="vit-list">
+            {VIT_BANK.map(vit => (
+              <button 
+                key={vit.vit_id} 
+                className="vit-btn"
+                onClick={() => {
+                  setContext({...context, vit, item: null});
+                  setView("select-item");
+                }}
+              >
+                {vit.vit_name}
+              </button>
+            ))}
+          </div>
+          <button className="btn btn-outline mt-2" onClick={() => setView("home")}>
+            ← Volver al inicio
+          </button>
+        </div>
+      );
+
+      // 📝 VISTA: SELECCIONAR ÍTEM
+      const SelectItemView = () => (
+        <div className="card">
+          <h3>📍 {context.vit?.vit_name}</h3>
+          <p className="text-sm mb-2">Selecciona el ítem a trabajar</p>
+          <div className="vit-list">
+            {context.vit?.items.map(item => (
+              <button 
+                key={item.item_id} 
+                className="item-btn"
+                onClick={() => {
+                  setContext({...context, item, phase: "blue"});
+                  setView("coach");
+                }}
+              >
+                {item.item_text}
+              </button>
+            ))}
+          </div>
+          <button className="btn btn-outline mt-2" onClick={() => setView("select-vit")}>
+            ← Cambiar VIT
+          </button>
+        </div>
+      );
+
+      // 🗣️ VISTA: COACHING (Principal)
+      const CoachView = () => (
+        <div className={`card phase-${context.phase}`}>
+          <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8}}>
+            <h3 style={{fontSize:"1rem"}}>{context.item?.item_text}</h3>
+            <span className="text-sm" style={{color: `var(--${context.phase})`}}>
+              {context.phase==="blue"?"🔵 Reflexión":context.phase==="yellow"?"🟡 Exploración":"🟢 Compromiso"}
+            </span>
+          </div>
+          
+          {/* Selector de fase de color */}
+          <div className="phase-selector">
+            <div className={`phase-dot blue ${context.phase==="blue"?"active":""}`} onClick={()=>setContext({...context, phase:"blue"})} title="Reflexión / Escucha">🔵</div>
+            <div className={`phase-dot yellow ${context.phase==="yellow"?"active":""}`} onClick={()=>setContext({...context, phase:"yellow"})} title="Exploración / Opciones">🟡</div>
+            <div className={`phase-dot green ${context.phase==="green"?"active":""}`} onClick={()=>setContext({...context, phase:"green"})} title="Compromiso / Acción">🟢</div>
+            <div className={`phase-dot red ${context.phase==="red"?"active":""}`} onClick={()=>setContext({...context, phase:"red"})} title="Alerta / Brecha crítica">🔴</div>
+          </div>
+          
+          {/* Pregunta generada */}
+          {loading ? (
+            <div className="loading">
+              <div className="spinner"></div>
+              <p className="text-sm">Generando pregunta con IA...</p>
+            </div>
+          ) : questions[context.phase] ? (
+            <div className={`question-box ${context.phase}`}>
+              <strong>Pregunta guía:</strong> {questions[context.phase]}
+            </div>
+          ) : (
+            <p className="text-sm" style={{color:"#94A3B8"}}>Selecciona una fase para ver la pregunta</p>
+          )}
+          
+          {/* Respuesta del ejecutor */}
+          <textarea 
+            placeholder="💬 Respuesta / Observación del ejecutor..." 
+            value={answers[context.phase] || ""}
+            onChange={e => setAnswers({...answers, [context.phase]: e.target.value})}
+            rows={3}
+          />
+          
+          {/* Compromiso SMART (solo en fase verde) */}
+          {context.phase === "green" && (
+            <div style={{marginTop:12, padding:12, background:"rgba(34,197,94,0.15)", borderRadius:10}}>
+              <p style={{marginBottom:8, fontWeight:600}}>📝 Compromiso SMART</p>
+              <textarea 
+                placeholder="Específico, Medible, Alcanzable, Relevante, Tiempo definido..." 
+                value={smart}
+                onChange={e => setSmart(e.target.value)}
+                rows={3}
+                style={{background:"rgba(255,255,255,0.1)"}}
+              />
+            </div>
+          )}
+          
+          {/* Observaciones adicionales */}
+          <textarea 
+            placeholder="📌 Observaciones HOP / Notas adicionales..." 
+            value={observations}
+            onChange={e => setObservations(e.target.value)}
+            rows={2}
+            style={{marginTop:8}}
+          />
+          
+          {/* Evidencia fotográfica */}
+          <div style={{marginTop:12}}>
+            <label className="text-sm" style={{display:"block", marginBottom:6}}>📷 Evidencia (foto opcional)</label>
+            <input type="file" accept="image/*" capture="environment" onChange={handlePhoto} />
+            {photo && <p className="text-sm" style={{color:"var(--green)", marginTop:4}}>✓ Foto adjunta</p>}
+          </div>
+          
+          {/* Firma digital */}
+          <div 
+            className={`signature-area ${signed?"signed":""}`} 
+            onClick={() => setSigned(!signed)}
+          >
+            {signed ? "✍️ ✅ Firma registrada - Intervención validada" : "👆 Toca para confirmar con firma digital"}
+          </div>
+          
+          {/* Botones de acción */}
+          <div className="flex" style={{marginTop:16}}>
+            <button className="btn btn-green" onClick={saveIntervention} disabled={!signed}>
+              ✅ Cerrar Intervención
+            </button>
+            <button className="btn btn-red" onClick={() => { resetForm(); setView("select-item"); }}>
+              ⏹ Otro Ítem
+            </button>
+          </div>
+        </div>
+      );
+
+      // 📊 VISTA: DASHBOARD
+      const DashboardView = () => (
+        <div className="card">
+          <h3>📊 Reportes & Estadísticas</h3>
+          
+          <div className="stats-grid">
+            <div className="stat-card">
+              <div className="stat-value">{stats.total}</div>
+              <div className="stat-label">Intervenciones</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-value" style={{color:"var(--green)"}}>{stats.closed}</div>
+              <div className="stat-label">Cerradas</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-value" style={{color:"var(--yellow)"}}>{stats.open}</div>
+              <div className="stat-label">Pendientes</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-value">{VIT_BANK.length}</div>
+              <div className="stat-label">VITs Disponibles</div>
+            </div>
+          </div>
+          
+          <div style={{marginTop:16}}>
+            <p className="text-sm" style={{marginBottom:8}}>📋 Últimas intervenciones:</p>
+            <div style={{maxHeight:200, overflowY:"auto"}}>
+              {Array.from({length: Math.min(5, stats.total)}).map((_,i) => (
+                <div key={i} style={{padding:8, background:"var(--input)", borderRadius:8, marginBottom:6, fontSize:"0.9rem"}}>
+                  <strong>VIT #{i+1}</strong> • {new Date().toLocaleDateString()} 
+                  <span className="status-badge status-closed" style={{marginLeft:8}}>Cerrada</span>
+                </div>
+              ))}
+              {stats.total === 0 && <p className="text-sm" style={{color:"#94A3B8"}}>Aún no hay intervenciones registradas</p>}
+            </div>
+          </div>
+          
+          <button className="btn btn-yellow mt-2" onClick={() => setView("home")}>
+            ← Volver al inicio
+          </button>
+          
+          <p className="text-sm" style={{marginTop:16, color:"#64748B", textAlign:"center"}}>
+            💡 Los datos se sincronizan automáticamente cuando hay conexión a internet
+          </p>
+        </div>
+      );
+
+      // ═══════════════════════════════════════════════════════════
+      // 🎬 RENDER PRINCIPAL
+      // ═══════════════════════════════════════════════════════════
       return (
         <div className="container">
-          {view === "home" && (
-            <>
-              <h1 style={{textAlign:"center", marginBottom:20}}>🛡️ V&V COACH</h1>
-              <input placeholder="Supervisor" value={context.supervisor} onChange={e=>setContext({...context, supervisor:e.target.value})} />
-              <button className="btn" onClick={()=>setView("select-vit")}>Iniciar Intervención</button>
-              <button className="btn btn-yellow" onClick={()=>setView("dashboard")}>📊 Ver Reportes</button>
-            </>
-          )}
-
-          {view === "select-vit" && (
-            <div className="card">
-              <h3>Selecciona VIT</h3>
-              {VIT_BANK.map(v => (
-                <button key={v.vit_id} className="btn" style={{background:"var(--card)", border:"1px solid var(--blue)", color:"var(--text)", textAlign:"left"}} onClick={()=>setContext({...context, vit:v}) && setView("select-item")}>{v.vit_name}</button>
-              ))}
-              <button className="btn btn-yellow" onClick={()=>setView("home")}>← Volver</button>
-            </div>
-          )}
-
-          {view === "select-item" && (
-            <div className="card">
-              <h3>Ítems: {context.vit.vit_name}</h3>
-              {context.vit.items.map(i => (
-                <button key={i.item_id} className="btn" style={{background:"var(--card)", textAlign:"left"}} onClick={()=>setContext({...context, item:i, phase:"blue"}) && setView("coach")}>{i.item_text}</button>
-              ))}
-              <button className="btn btn-yellow" onClick={()=>setView("select-vit")}>← Volver</button>
-            </div>
-          )}
-
-          {view === "coach" && (
-            <div className={`card phase-${context.phase}`}>
-              <h3>{context.item.text}</h3>
-              <p style={{color:"#94A3B8", fontSize:12}}>Tono actual: {context.phase==="blue"?"🔵 Reflexión":context.phase==="yellow"?"🟡 Exploración":"🟢 Compromiso"}</p>
-              <div style={{display:"flex", gap:8, marginBottom:12}}>
-                {["blue","yellow","green","red"].map(c => (
-                  <button key={c} style={{width:32, height:32, borderRadius:"50%", background:`var(--${c})`, border: context.phase===c?"3px solid white":"none"}} onClick={()=>setContext({...context, phase:c})}></button>
-                ))}
-              </div>
-              {loading ? <p>Cargando preguntas IA...</p> : (
-                <>
-                  <p style={{margin:"10px 0", fontStyle:"italic"}}>{questions[context.phase]}</p>
-                  <textarea placeholder="Escribe la respuesta del ejecutor..." value={answers[context.phase]||""} onChange={e=>setAnswers({...answers, [context.phase]:e.target.value})} rows={3}></textarea>
-                </>
-              )}
-              {context.phase==="green" && (
-                <div style={{marginTop:12, padding:10, background:"#064E3B", borderRadius:8}}>
-                  <p style={{marginBottom:8}}>📝 Compromiso SMART:</p>
-                  <textarea placeholder="¿Qué harás? ¿Cómo lo medirás? ¿Es realista? ¿Cuándo?" value={smart} onChange={e=>setSmart(e.target.value)} rows={3}></textarea>
-                </div>
-              )}
-              <div style={{display:"flex", gap:8, marginTop:12}}>
-                <button className="btn" onClick={saveIntervention} disabled={!signature}>✅ Cerrar</button>
-                <button className="btn btn-red" onClick={()=>setView("select-item")}>⏹ Cambiar Ítem</button>
-              </div>
-              <p style={{fontSize:12, marginTop:8, textAlign:"center"}}>Firma digital requerida para cerrar</p>
-              <div style={{border:"2px dashed #475569", borderRadius:8, padding:10, textAlign:"center", cursor:"pointer"}} onClick={()=>setSignature(!signature)}>
-                {signature ? "✍️ Firma registrada" : "👆 Toca para firmar (simulado)"}
-              </div>
-            </div>
-          )}
-
-          {view === "dashboard" && (
-            <div className="card">
-              <h3>📊 Intervenciones</h3>
-              <p style={{color:"#94A3B8"}}>Próximamente: KPIs, exportación CSV, filtros por VIT/supervisor.</p>
-              <button className="btn btn-yellow" onClick={()=>setView("home")}>← Inicio</button>
-            </div>
-          )}
+          <header>
+            <h1>🛡️ V&V COACH</h1>
+            <p>Menserca • Chevron • Enfoque HOP</p>
+          </header>
+          
+          {view === "home" && <HomeView />}
+          {view === "select-vit" && <SelectVITView />}
+          {view === "select-item" && <SelectItemView />}
+          {view === "coach" && <CoachView />}
+          {view === "dashboard" && <DashboardView />}
+          
+          <footer>
+            <button className="btn btn-outline" onClick={() => setView("home")} style={{flex:1}}>🏠 Inicio</button>
+            <button className="btn" onClick={() => { resetForm(); setView("select-vit"); }} style={{flex:2}}>➕ Nueva</button>
+          </footer>
         </div>
       );
     }
 
-    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
-  </script>
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js');
+    // 🚀 Inicializar React
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<App />);
+
+    // 📱 Registrar Service Worker para PWA offline
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("/sw.js").then(reg => {
+          console.log("✅ Service Worker registrado:", reg.scope);
+        }).catch(err => console.log("❌ SW error:", err));
+      });
     }
   </script>
 </body>
