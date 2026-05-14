@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   
-  <!-- Librerías CDN (sin instalar nada) -->
+  <!-- Librerías CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/dexie@3"></script>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -22,17 +22,19 @@
       --bg: #0F172A; --text: #F8FAFC; --card: #1E293B; --input: #334155;
       --blue-soft: rgba(59,130,246,0.15); --yellow-soft: rgba(234,179,8,0.15);
       --green-soft: rgba(34,197,94,0.15); --red-soft: rgba(239,68,68,0.15);
+      --tab-active: #334155; --tab-inactive: #1E293B;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; }
-    body { background: var(--bg); color: var(--text); min-height: 100vh; padding: 12px; line-height: 1.4; }
-    .container { max-width: 480px; margin: 0 auto; padding-bottom: 80px; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; -webkit-tap-highlight-color: transparent; }
+    body { background: var(--bg); color: var(--text); min-height: 100vh; padding-top: 56px; padding-bottom: 70px; line-height: 1.4; }
+    .container { max-width: 480px; margin: 0 auto; padding: 12px; }
     
-    /* Header */
-    header { text-align: center; padding: 16px 0; margin-bottom: 12px; border-bottom: 1px solid #334155; }
-    header h1 { font-size: 1.4rem; font-weight: 700; }
-    header p { color: #94A3B8; font-size: 0.85rem; margin-top: 4px; }
+    /* ===== TABS SUPERIORES ===== */
+    .tabs { position: fixed; top: 0; left: 0; right: 0; max-width: 480px; margin: 0 auto; background: var(--card); border-bottom: 1px solid #334155; display: flex; z-index: 100; }
+    .tab { flex: 1; padding: 12px 8px; text-align: center; font-size: 0.75rem; font-weight: 500; color: #94A3B8; background: var(--tab-inactive); border: none; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .tab.active { background: var(--tab-active); color: var(--blue); font-weight: 600; border-bottom: 3px solid var(--blue); }
+    .tab-icon { font-size: 1.1rem; }
     
-    /* Botones */
+    /* ===== BOTONES ===== */
     .btn { padding: 14px; border: none; border-radius: 12px; background: var(--blue); color: white; font-weight: 600; font-size: 1rem; cursor: pointer; width: 100%; margin: 6px 0; transition: transform 0.1s; }
     .btn:active { transform: scale(0.98); }
     .btn-green { background: var(--green); } 
@@ -40,23 +42,24 @@
     .btn-red { background: var(--red); }
     .btn-outline { background: transparent; border: 2px solid var(--blue); color: var(--blue); }
     .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-sm { padding: 8px 12px; font-size: 0.85rem; width: auto; }
     
-    /* Cards */
+    /* ===== CARDS ===== */
     .card { background: var(--card); padding: 16px; border-radius: 16px; margin: 8px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.25); }
     .card h3 { margin-bottom: 12px; font-size: 1.1rem; }
     
-    /* Inputs */
+    /* ===== INPUTS ===== */
     input, select, textarea { width: 100%; padding: 12px; background: var(--input); color: var(--text); border: 1px solid #475569; border-radius: 10px; margin: 6px 0; font-size: 1rem; }
-    input:focus, textarea:focus { outline: 2px solid var(--blue); border-color: transparent; }
+    input:focus, textarea:focus, select:focus { outline: 2px solid var(--blue); border-color: transparent; }
     textarea { resize: vertical; min-height: 80px; }
     
-    /* Fases de color */
+    /* ===== FASES DE COLOR ===== */
     .phase-blue { border-left: 5px solid var(--blue); background: linear-gradient(90deg, var(--blue-soft), transparent); }
     .phase-yellow { border-left: 5px solid var(--yellow); background: linear-gradient(90deg, var(--yellow-soft), transparent); }
     .phase-green { border-left: 5px solid var(--green); background: linear-gradient(90deg, var(--green-soft), transparent); }
     .phase-red { border-left: 5px solid var(--red); background: linear-gradient(90deg, var(--red-soft), transparent); }
     
-    /* Selector de fase */
+    /* ===== SELECTOR DE FASE ===== */
     .phase-selector { display: flex; gap: 10px; margin: 12px 0; justify-content: center; }
     .phase-dot { width: 36px; height: 36px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: all 0.2s; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; }
     .phase-dot.active { border-color: white; transform: scale(1.1); }
@@ -65,52 +68,61 @@
     .phase-dot.green { background: var(--green); }
     .phase-dot.red { background: var(--red); }
     
-    /* Pregunta IA */
+    /* ===== PREGUNTA IA ===== */
     .question-box { background: rgba(255,255,255,0.08); padding: 14px; border-radius: 10px; margin: 10px 0; font-style: italic; border-left: 3px solid var(--blue); }
     .question-box.yellow { border-left-color: var(--yellow); }
     .question-box.green { border-left-color: var(--green); }
     
-    /* Firma */
-    .signature-area { border: 2px dashed #475569; border-radius: 12px; padding: 20px; text-align: center; margin: 12px 0; cursor: pointer; background: rgba(255,255,255,0.03); }
-    .signature-area.signed { border-style: solid; background: var(--green-soft); }
+    /* ===== FIRMA ===== */
+    .signature-area { border: 2px dashed #475569; border-radius: 12px; padding: 20px; text-align: center; margin: 12px 0; cursor: pointer; background: rgba(255,255,255,0.03); transition: all 0.2s; }
+    .signature-area.signed { border-style: solid; background: var(--green-soft); border-color: var(--green); }
     
-    /* Estado */
-    .status-badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; margin-left: 8px; }
-    .status-open { background: var(--yellow); color: #0F172A; }
-    .status-closed { background: var(--green); color: #0F172A; }
+    /* ===== ESTADO ===== */
+    .status-badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+    .status-online { background: var(--green); color: #0F172A; }
+    .status-offline { background: var(--red); color: white; }
+    .status-pending { background: var(--yellow); color: #0F172A; }
     
-    /* Loading */
+    /* ===== LOADING ===== */
     .loading { text-align: center; padding: 20px; color: #94A3B8; }
     .spinner { width: 24px; height: 24px; border: 3px solid rgba(255,255,255,0.3); border-top-color: var(--blue); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 10px; }
     @keyframes spin { to { transform: rotate(360deg); } }
     
-    /* Utilidades */
+    /* ===== UTILIDADES ===== */
     .hidden { display: none !important; }
     .text-center { text-align: center; }
     .text-sm { font-size: 0.85rem; color: #94A3B8; }
+    .text-xs { font-size: 0.75rem; color: #64748B; }
     .mt-2 { margin-top: 8px; }
     .mb-2 { margin-bottom: 8px; }
     .flex { display: flex; gap: 8px; }
     .flex-wrap { flex-wrap: wrap; }
+    .items-center { align-items: center; }
+    .justify-between { justify-content: space-between; }
     
-    /* Lista de VITs */
-    .vit-list { display: grid; gap: 8px; }
-    .vit-btn { text-align: left; padding: 14px; background: var(--card); border: 1px solid #334155; border-radius: 12px; color: var(--text); font-weight: 500; transition: all 0.2s; }
-    .vit-btn:hover { border-color: var(--blue); background: #243045; }
+    /* ===== LISTAS ===== */
+    .vit-list, .item-list { display: grid; gap: 8px; }
+    .vit-btn, .item-btn { text-align: left; padding: 14px; background: var(--input); border: 1px solid #475569; border-radius: 12px; color: var(--text); font-weight: 500; transition: all 0.2s; cursor: pointer; }
+    .vit-btn:hover, .item-btn:hover { border-color: var(--blue); background: #3a4a65; }
+    .item-btn { padding: 12px; font-size: 0.95rem; }
     
-    /* Lista de ítems */
-    .item-btn { text-align: left; padding: 12px; background: var(--input); border: 1px solid #475569; border-radius: 10px; color: var(--text); margin: 4px 0; font-size: 0.95rem; transition: all 0.2s; }
-    .item-btn:hover { border-color: var(--blue); background: #3a4a65; }
-    
-    /* Dashboard */
+    /* ===== DASHBOARD ===== */
     .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0; }
     .stat-card { background: var(--input); padding: 12px; border-radius: 10px; text-align: center; }
     .stat-value { font-size: 1.5rem; font-weight: 700; color: var(--blue); }
     .stat-label { font-size: 0.8rem; color: #94A3B8; }
     
-    /* Footer */
-    footer { position: fixed; bottom: 0; left: 0; right: 0; max-width: 480px; margin: 0 auto; padding: 12px; background: var(--card); border-top: 1px solid #334155; display: flex; gap: 8px; }
-    footer .btn { margin: 0; padding: 10px; font-size: 0.9rem; }
+    /* ===== FOOTER NAV ===== */
+    .footer-nav { position: fixed; bottom: 0; left: 0; right: 0; max-width: 480px; margin: 0 auto; background: var(--card); border-top: 1px solid #334155; padding: 8px 12px; display: flex; gap: 8px; z-index: 100; }
+    .footer-nav .btn { margin: 0; padding: 10px; font-size: 0.9rem; }
+    
+    /* ===== SECCIONES ===== */
+    .section { animation: fadeIn 0.2s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    
+    /* ===== SELECTORES ===== */
+    .vit-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .back-btn { background: none; border: none; color: var(--blue); font-size: 1rem; cursor: pointer; padding: 4px 8px; }
   </style>
 </head>
 <body>
@@ -118,7 +130,7 @@
 
   <script type="text/babel">
     // ═══════════════════════════════════════════════════════════════
-    // 🗄️ BANCO OFFLINE COMPLETO - 13 VIT IOGP con preguntas HOP/Jung
+    // 🗄️ BANCO OFFLINE - 13 VIT IOGP (sin cambios)
     // ═══════════════════════════════════════════════════════════════
     const VIT_BANK = [
       {"vit_id":"VIT_01","vit_name":"🔥 Trabajo en Caliente","items":[
@@ -202,18 +214,15 @@
     ];
 
     // ═══════════════════════════════════════════════════════════════
-    // ⚙️ CONFIGURACIÓN - TUS CREDENCIALES (YA INTEGRADAS)
+    // ⚙️ CONFIGURACIÓN
     // ═══════════════════════════════════════════════════════════════
     const SUPABASE_URL = "https://qvltqmcdxzjilsflnigy.supabase.co";
     const SUPABASE_KEY = "sb_publishable_N5GDPt3t7bdxzKQn68CRAA_vXgILA5H";
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    
-    // 🔑 CLAVE IA (Opcional - si no la pones, usa banco offline)
-    // Regístrate gratis en https://openrouter.ai para obtener una
-    const OPENROUTER_KEY = ""; // ← Pega tu clave aquí si quieres IA en tiempo real
+    const OPENROUTER_KEY = ""; // ← Opcional: pega tu clave de OpenRouter aquí
 
     // ═══════════════════════════════════════════════════════════════
-    // 🗄️ BASE DE DATOS OFFLINE (Dexie.js / IndexedDB)
+    // 🗄️ BASE DE DATOS OFFLINE
     // ═══════════════════════════════════════════════════════════════
     const db = new Dexie("VITCoachDB");
     db.version(1).stores({
@@ -222,72 +231,67 @@
     });
 
     // ═══════════════════════════════════════════════════════════════
-    // 🧠 COMPONENTE PRINCIPAL DE LA APP (React)
+    // 🧠 COMPONENTE PRINCIPAL (CON FIX DE INPUTS)
     // ═══════════════════════════════════════════════════════════════
-    const { useState, useEffect } = React;
+    const { useState, useEffect, useMemo } = React;
 
     function App() {
-      // Estados de navegación
-      const [view, setView] = useState("home");
+      // Estado de navegación por tabs
+      const [activeTab, setActiveTab] = useState("home");
       
-      // Contexto de la intervención
-      const [context, setContext] = useState({
-        date: new Date().toISOString().slice(0,10),
-        time: new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'}),
+      // Estado de conexión
+      const [syncStatus, setSyncStatus] = useState(navigator.onLine ? "online" : "offline");
+      
+      // Estado del formulario de intervención (PERSISTENTE entre tabs)
+      const [formData, setFormData] = useState({
         supervisor: "",
         area: "",
+        date: new Date().toISOString().slice(0,10),
+        time: new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'}),
         vit: null,
         item: null,
-        phase: "blue"
+        phase: "blue",
+        questions: {},
+        answers: {},
+        smart: "",
+        observations: "",
+        photo: null,
+        signed: false
       });
-      
-      // Datos del coaching
-      const [questions, setQuestions] = useState({});
-      const [answers, setAnswers] = useState({});
-      const [smart, setSmart] = useState("");
-      const [observations, setObservations] = useState("");
-      const [photo, setPhoto] = useState(null);
-      const [signed, setSigned] = useState(false);
       
       // Estados de UI
       const [loading, setLoading] = useState(false);
-      const [syncStatus, setSyncStatus] = useState("offline");
-      const [stats, setStats] = useState({ total: 0, closed: 0, open: 0 });
+      const [stats, setStats] = useState({ total: 0, closed: 0 });
+      const [interventions, setInterventions] = useState([]);
 
-      // Verificar conexión y sincronizar al iniciar
+      // Efecto: verificar conexión y cargar stats
       useEffect(() => {
-        const checkConnection = () => {
-          setSyncStatus(navigator.onLine ? "online" : "offline");
-        };
-        checkConnection();
-        window.addEventListener('online', checkConnection);
-        window.addEventListener('offline', checkConnection);
-        
-        // Cargar estadísticas
+        const handleConnection = () => setSyncStatus(navigator.onLine ? "online" : "offline");
+        window.addEventListener('online', handleConnection);
+        window.addEventListener('offline', handleConnection);
         loadStats();
-        
         return () => {
-          window.removeEventListener('online', checkConnection);
-          window.removeEventListener('offline', checkConnection);
+          window.removeEventListener('online', handleConnection);
+          window.removeEventListener('offline', handleConnection);
         };
       }, []);
 
-      // Cargar preguntas cuando cambia el ítem
+      // Efecto: cargar preguntas cuando cambia el ítem
       useEffect(() => {
-        if (context.vit && context.item) {
+        if (formData.vit && formData.item && !formData.questions[formData.phase]) {
           loadQuestions();
         }
-      }, [context.vit, context.item]);
+      }, [formData.vit, formData.item, formData.phase]);
 
-      // Cargar preguntas (IA online o banco offline)
+      // Cargar preguntas (IA o offline)
       const loadQuestions = async () => {
-        if (!context.item) return;
+        if (!formData.item) return;
         setLoading(true);
         
         // Intentar IA si hay clave y conexión
         if (OPENROUTER_KEY && navigator.onLine) {
           try {
-            const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+            const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
               method: "POST",
               headers: {
                 "Authorization": `Bearer ${OPENROUTER_KEY}`,
@@ -297,351 +301,292 @@
               },
               body: JSON.stringify({
                 model: "mistralai/mistral-7b-instruct:free",
-                messages: [{
-                  role: "user",
-                  content: `Eres un experto en coaching HSE con enfoque HOP. Genera EXACTAMENTE 3 preguntas abiertas en español neutro para: "${context.item.item_text}". 
-                  Formato JSON estricto: {"blue":"Pregunta de reflexión/realidad","yellow":"Pregunta de exploración/opciones","green":"Pregunta de compromiso/validación"}.
-                  Reglas: tono empático, sin juicio, evita "culpa/error/deberías", máximo 25 palabras por pregunta.`
-                }],
+                messages: [{ role: "user", content: `Genera 3 preguntas abiertas en español neutro para coaching HSE HOP sobre: "${formData.item.item_text}". Formato JSON: {"blue":"Pregunta de reflexión","yellow":"Pregunta de exploración","green":"Pregunta de compromiso"}. Sin juicio, máximo 25 palabras cada una.` }],
                 temperature: 0.7
               })
             });
-            const data = await response.json();
+            const data = await res.json();
             if (data.choices?.[0]?.message?.content) {
               const parsed = JSON.parse(data.choices[0].message.content);
-              setQuestions(parsed);
+              setFormData(prev => ({ ...prev, questions: parsed }));
               setLoading(false);
               return;
             }
-          } catch (e) {
-            console.log("IA no disponible, usando banco offline");
-          }
+          } catch (e) { console.log("IA offline, usando banco local"); }
         }
         
-        // Fallback: banco offline
-        const vit = VIT_BANK.find(v => v.vit_id === context.vit.vit_id);
-        const item = vit?.items.find(i => i.item_id === context.item.item_id);
+        // Fallback offline
+        const vit = VIT_BANK.find(v => v.vit_id === formData.vit?.vit_id);
+        const item = vit?.items.find(i => i.item_id === formData.item?.item_id);
         if (item?.questions) {
-          setQuestions(item.questions);
+          setFormData(prev => ({ ...prev, questions: item.questions }));
         }
         setLoading(false);
       };
 
-      // Guardar intervención en local + sync a nube
+      // Actualizar un campo del formulario (FIX: no recrea componentes)
+      const updateForm = (field, value) => {
+        setFormData(prev => ({ ...prev, [field]: value }));
+      };
+
+      // Actualizar respuesta por fase
+      const updateAnswer = (phase, value) => {
+        setFormData(prev => ({
+          ...prev,
+          answers: { ...prev.answers, [phase]: value }
+        }));
+      };
+
+      // Guardar intervención
       const saveIntervention = async () => {
-        if (!signed) {
-          alert("⚠️ Por favor confirma tu firma digital para cerrar la intervención");
+        if (!formData.signed) {
+          alert("⚠️ Confirma tu firma digital para cerrar");
           return;
         }
         
         const intervention = {
-          vit_id: context.vit.vit_id,
-          vit_name: context.vit.vit_name,
-          item_id: context.item.item_id,
-          item_text: context.item.item_text,
-          supervisor: context.supervisor,
-          area: context.area,
-          date: context.date,
-          time: context.time,
-          phase: context.phase,
-          questions: questions,
-          answers: answers,
-          smart: smart,
-          observations: observations,
-          photo: photo,
+          vit_id: formData.vit.vit_id,
+          vit_name: formData.vit.vit_name,
+          item_id: formData.item.item_id,
+          item_text: formData.item.item_text,
+          supervisor: formData.supervisor,
+          area: formData.area,
+          date: formData.date,
+          time: formData.time,
+          phase: formData.phase,
+          questions: formData.questions,
+          answers: formData.answers,
+          smart: formData.smart,
+          observations: formData.observations,
+          photo: formData.photo,
           signed: true,
           status: "closed",
-          createdAt: new Date().toISOString(),
-          synced: false
+          createdAt: new Date().toISOString()
         };
 
-        // Guardar en IndexedDB (siempre funciona offline)
-        const id = await db.interventions.add(intervention);
+        await db.interventions.add(intervention);
         
-        // Intentar sincronizar con Supabase si hay conexión
         if (navigator.onLine) {
           try {
-            await supabase.from("interventions").insert([{...intervention, id: null, synced: true}]);
-            await db.interventions.update(id, { synced: true });
+            await supabase.from("interventions").insert([intervention]);
             setSyncStatus("synced");
-          } catch (e) {
-            console.log("Sync pendiente:", e.message);
-            setSyncStatus("pending");
-          }
+          } catch (e) { setSyncStatus("pending"); }
         }
         
-        alert("✅ Intervención guardada localmente" + (navigator.onLine ? " y sincronizada con la nube" : ". Se sincronizará automáticamente cuando haya conexión"));
-        
-        // Resetear formulario
+        alert("✅ Guardado localmente" + (navigator.onLine ? " + sincronizado" : ""));
         resetForm();
-        setView("home");
         loadStats();
+        setActiveTab("home");
       };
 
-      // Resetear formulario para nueva intervención
+      // Resetear formulario
       const resetForm = () => {
-        setAnswers({});
-        setSmart("");
-        setObservations("");
-        setPhoto(null);
-        setSigned(false);
-        setQuestions({});
-        setContext(prev => ({...prev, item: null, phase: "blue"}));
+        setFormData(prev => ({
+          ...prev,
+          item: null,
+          phase: "blue",
+          questions: {},
+          answers: {},
+          smart: "",
+          observations: "",
+          photo: null,
+          signed: false
+        }));
       };
 
-      // Cargar estadísticas del dashboard
+      // Cargar estadísticas
       const loadStats = async () => {
         const all = await db.interventions.toArray();
-        setStats({
-          total: all.length,
-          closed: all.filter(i => i.status === "closed").length,
-          open: all.filter(i => i.status === "open").length
-        });
+        setStats({ total: all.length, closed: all.filter(i => i.status === "closed").length });
+        setInterventions(all.slice(-5).reverse());
       };
 
-      // Manejar captura de foto (simplificado para demo)
-      const handlePhoto = async (e) => {
+      // Manejar foto
+      const handlePhoto = (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
-        
-        // Leer como base64 (para demo - en producción usar compresión)
         const reader = new FileReader();
-        reader.onload = (ev) => {
-          setPhoto(ev.target.result);
-        };
+        reader.onload = (ev) => updateForm("photo", ev.target.result);
         reader.readAsDataURL(file);
       };
 
       // ═══════════════════════════════════════════════════════════
-      // 🎨 VISTAS DE LA APLICACIÓN
+      // 🎨 VISTAS (Renderizado directo - NO componentes anidados)
       // ═══════════════════════════════════════════════════════════
 
-      // 🏠 VISTA: HOME
-      const HomeView = () => (
-        <div className="card">
+      // 🏠 TAB: INICIO
+      const renderHome = () => (
+        <div className="card section">
           <div className="text-center mb-2">
             <h2 style={{fontSize:"1.3rem"}}>🛡️ V&V COACH</h2>
             <p className="text-sm">Verificación & Validación • Enfoque HOP</p>
-            <span className={`status-badge ${syncStatus==="online"?"status-closed":"status-open"}`}>
+            <span className={`status-badge status-${syncStatus==="online"?"online":"offline"}`}>
               {syncStatus==="online"?"🟢 Conectado":"🔴 Offline"}
             </span>
           </div>
           
-          <input 
-            placeholder="👤 Nombre del supervisor" 
-            value={context.supervisor}
-            onChange={e => setContext({...context, supervisor: e.target.value})}
-          />
-          <input 
-            placeholder="📍 Área / Turno (opcional)" 
-            value={context.area}
-            onChange={e => setContext({...context, area: e.target.value})}
-          />
+          <input placeholder="👤 Supervisor" value={formData.supervisor} onChange={e => updateForm("supervisor", e.target.value)} />
+          <input placeholder="📍 Área / Turno" value={formData.area} onChange={e => updateForm("area", e.target.value)} />
           
-          <button className="btn" onClick={() => setView("select-vit")}>
-            🎯 Nueva Intervención
-          </button>
-          <button className="btn btn-yellow" onClick={() => { loadStats(); setView("dashboard"); }}>
-            📊 Ver Reportes
-          </button>
+          <button className="btn" onClick={() => setActiveTab("intervention")}>🎯 Nueva Intervención</button>
+          <button className="btn btn-yellow" onClick={() => { loadStats(); setActiveTab("reports"); }}>📊 Ver Reportes</button>
           
           <div className="stats-grid mt-2">
-            <div className="stat-card">
-              <div className="stat-value">{stats.total}</div>
-              <div className="stat-label">Total</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-value" style={{color:"var(--green)"}}>{stats.closed}</div>
-              <div className="stat-label">Cerradas</div>
-            </div>
+            <div className="stat-card"><div className="stat-value">{stats.total}</div><div className="stat-label">Total</div></div>
+            <div className="stat-card"><div className="stat-value" style={{color:"var(--green)"}}>{stats.closed}</div><div className="stat-label">Cerradas</div></div>
           </div>
         </div>
       );
 
-      // 📋 VISTA: SELECCIONAR VIT
-      const SelectVITView = () => (
-        <div className="card">
-          <h3>📋 Selecciona la VIT</h3>
-          <p className="text-sm mb-2">13 Verificaciones de Inicio de Trabajo - IOGP</p>
-          <div className="vit-list">
-            {VIT_BANK.map(vit => (
-              <button 
-                key={vit.vit_id} 
-                className="vit-btn"
-                onClick={() => {
-                  setContext({...context, vit, item: null});
-                  setView("select-item");
-                }}
-              >
-                {vit.vit_name}
-              </button>
-            ))}
-          </div>
-          <button className="btn btn-outline mt-2" onClick={() => setView("home")}>
-            ← Volver al inicio
-          </button>
-        </div>
-      );
-
-      // 📝 VISTA: SELECCIONAR ÍTEM
-      const SelectItemView = () => (
-        <div className="card">
-          <h3>📍 {context.vit?.vit_name}</h3>
-          <p className="text-sm mb-2">Selecciona el ítem a trabajar</p>
-          <div className="vit-list">
-            {context.vit?.items.map(item => (
-              <button 
-                key={item.item_id} 
-                className="item-btn"
-                onClick={() => {
-                  setContext({...context, item, phase: "blue"});
-                  setView("coach");
-                }}
-              >
-                {item.item_text}
-              </button>
-            ))}
-          </div>
-          <button className="btn btn-outline mt-2" onClick={() => setView("select-vit")}>
-            ← Cambiar VIT
-          </button>
-        </div>
-      );
-
-      // 🗣️ VISTA: COACHING (Principal)
-      const CoachView = () => (
-        <div className={`card phase-${context.phase}`}>
-          <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8}}>
-            <h3 style={{fontSize:"1rem"}}>{context.item?.item_text}</h3>
-            <span className="text-sm" style={{color: `var(--${context.phase})`}}>
-              {context.phase==="blue"?"🔵 Reflexión":context.phase==="yellow"?"🟡 Exploración":"🟢 Compromiso"}
-            </span>
-          </div>
-          
-          {/* Selector de fase de color */}
-          <div className="phase-selector">
-            <div className={`phase-dot blue ${context.phase==="blue"?"active":""}`} onClick={()=>setContext({...context, phase:"blue"})} title="Reflexión / Escucha">🔵</div>
-            <div className={`phase-dot yellow ${context.phase==="yellow"?"active":""}`} onClick={()=>setContext({...context, phase:"yellow"})} title="Exploración / Opciones">🟡</div>
-            <div className={`phase-dot green ${context.phase==="green"?"active":""}`} onClick={()=>setContext({...context, phase:"green"})} title="Compromiso / Acción">🟢</div>
-            <div className={`phase-dot red ${context.phase==="red"?"active":""}`} onClick={()=>setContext({...context, phase:"red"})} title="Alerta / Brecha crítica">🔴</div>
-          </div>
-          
-          {/* Pregunta generada */}
-          {loading ? (
-            <div className="loading">
-              <div className="spinner"></div>
-              <p className="text-sm">Generando pregunta con IA...</p>
+      // 🎯 TAB: INTERVENCIÓN
+      const renderIntervention = () => {
+        // Sub-vista: Seleccionar VIT
+        if (!formData.vit) {
+          return (
+            <div className="card section">
+              <div className="vit-header">
+                <h3>📋 Selecciona VIT</h3>
+                <button className="back-btn" onClick={() => setActiveTab("home")}>✕</button>
+              </div>
+              <div className="vit-list">
+                {VIT_BANK.map(vit => (
+                  <button key={vit.vit_id} className="vit-btn" onClick={() => updateForm("vit", vit)}>
+                    {vit.vit_name}
+                  </button>
+                ))}
+              </div>
             </div>
-          ) : questions[context.phase] ? (
-            <div className={`question-box ${context.phase}`}>
-              <strong>Pregunta guía:</strong> {questions[context.phase]}
+          );
+        }
+        
+        // Sub-vista: Seleccionar Ítem
+        if (!formData.item) {
+          return (
+            <div className="card section">
+              <div className="vit-header">
+                <h3>📍 {formData.vit.vit_name}</h3>
+                <button className="back-btn" onClick={() => updateForm("vit", null)}>←</button>
+              </div>
+              <div className="item-list">
+                {formData.vit.items.map(item => (
+                  <button key={item.item_id} className="item-btn" onClick={() => updateForm("item", item)}>
+                    {item.item_text}
+                  </button>
+                ))}
+              </div>
             </div>
-          ) : (
-            <p className="text-sm" style={{color:"#94A3B8"}}>Selecciona una fase para ver la pregunta</p>
-          )}
-          
-          {/* Respuesta del ejecutor */}
-          <textarea 
-            placeholder="💬 Respuesta / Observación del ejecutor..." 
-            value={answers[context.phase] || ""}
-            onChange={e => setAnswers({...answers, [context.phase]: e.target.value})}
-            rows={3}
-          />
-          
-          {/* Compromiso SMART (solo en fase verde) */}
-          {context.phase === "green" && (
-            <div style={{marginTop:12, padding:12, background:"rgba(34,197,94,0.15)", borderRadius:10}}>
-              <p style={{marginBottom:8, fontWeight:600}}>📝 Compromiso SMART</p>
-              <textarea 
-                placeholder="Específico, Medible, Alcanzable, Relevante, Tiempo definido..." 
-                value={smart}
-                onChange={e => setSmart(e.target.value)}
-                rows={3}
-                style={{background:"rgba(255,255,255,0.1)"}}
-              />
+          );
+        }
+        
+        // Sub-vista: Coaching Principal
+        return (
+          <div className={`card phase-${formData.phase} section`}>
+            <div className="vit-header">
+              <h3 style={{fontSize:"1rem"}}>{formData.item.item_text}</h3>
+              <button className="back-btn" onClick={() => { updateForm("item", null); updateForm("questions", {}); }}>←</button>
             </div>
-          )}
-          
-          {/* Observaciones adicionales */}
-          <textarea 
-            placeholder="📌 Observaciones HOP / Notas adicionales..." 
-            value={observations}
-            onChange={e => setObservations(e.target.value)}
-            rows={2}
-            style={{marginTop:8}}
-          />
-          
-          {/* Evidencia fotográfica */}
-          <div style={{marginTop:12}}>
-            <label className="text-sm" style={{display:"block", marginBottom:6}}>📷 Evidencia (foto opcional)</label>
-            <input type="file" accept="image/*" capture="environment" onChange={handlePhoto} />
-            {photo && <p className="text-sm" style={{color:"var(--green)", marginTop:4}}>✓ Foto adjunta</p>}
+            
+            {/* Selector de fase */}
+            <div className="phase-selector">
+              <div className={`phase-dot blue ${formData.phase==="blue"?"active":""}`} onClick={()=>updateForm("phase","blue")} title="🔵 Reflexión">🔵</div>
+              <div className={`phase-dot yellow ${formData.phase==="yellow"?"active":""}`} onClick={()=>updateForm("phase","yellow")} title="🟡 Exploración">🟡</div>
+              <div className={`phase-dot green ${formData.phase==="green"?"active":""}`} onClick={()=>updateForm("phase","green")} title="🟢 Compromiso">🟢</div>
+              <div className={`phase-dot red ${formData.phase==="red"?"active":""}`} onClick={()=>updateForm("phase","red")} title="🔴 Alerta">🔴</div>
+            </div>
+            
+            {/* Pregunta */}
+            {loading ? (
+              <div className="loading"><div className="spinner"></div><p className="text-sm">Generando con IA...</p></div>
+            ) : formData.questions[formData.phase] ? (
+              <div className={`question-box ${formData.phase}`}>
+                <strong>Pregunta:</strong> {formData.questions[formData.phase]}
+              </div>
+            ) : <p className="text-sm" style={{color:"#94A3B8"}}>Selecciona una fase</p>}
+            
+            {/* Respuesta */}
+            <textarea placeholder="💬 Respuesta del ejecutor..." value={formData.answers[formData.phase]||""} onChange={e => updateAnswer(formData.phase, e.target.value)} rows={3} />
+            
+            {/* SMART */}
+            {formData.phase === "green" && (
+              <div style={{marginTop:12, padding:12, background:"rgba(34,197,94,0.15)", borderRadius:10}}>
+                <p style={{marginBottom:8, fontWeight:600}}>📝 Compromiso SMART</p>
+                <textarea placeholder="Específico, Medible, Alcanzable, Relevante, Tiempo..." value={formData.smart} onChange={e => updateForm("smart", e.target.value)} rows={3} style={{background:"rgba(255,255,255,0.1)"}} />
+              </div>
+            )}
+            
+            {/* Observaciones */}
+            <textarea placeholder="📌 Notas HOP..." value={formData.observations} onChange={e => updateForm("observations", e.target.value)} rows={2} style={{marginTop:8}} />
+            
+            {/* Foto */}
+            <div style={{marginTop:12}}>
+              <label className="text-sm" style={{display:"block", marginBottom:6}}>📷 Evidencia (opcional)</label>
+              <input type="file" accept="image/*" capture="environment" onChange={handlePhoto} />
+              {formData.photo && <p className="text-sm" style={{color:"var(--green)", marginTop:4}}>✓ Foto adjunta</p>}
+            </div>
+            
+            {/* Firma */}
+            <div className={`signature-area ${formData.signed?"signed":""}`} onClick={() => updateForm("signed", !formData.signed)}>
+              {formData.signed ? "✍️ ✅ Firma registrada" : "👆 Toca para firmar digitalmente"}
+            </div>
+            
+            {/* Botones */}
+            <div className="flex" style={{marginTop:16}}>
+              <button className="btn btn-green" onClick={saveIntervention} disabled={!formData.signed}>✅ Cerrar</button>
+              <button className="btn btn-red" onClick={() => { resetForm(); setActiveTab("home"); }}>⏹ Salir</button>
+            </div>
           </div>
-          
-          {/* Firma digital */}
-          <div 
-            className={`signature-area ${signed?"signed":""}`} 
-            onClick={() => setSigned(!signed)}
-          >
-            {signed ? "✍️ ✅ Firma registrada - Intervención validada" : "👆 Toca para confirmar con firma digital"}
-          </div>
-          
-          {/* Botones de acción */}
-          <div className="flex" style={{marginTop:16}}>
-            <button className="btn btn-green" onClick={saveIntervention} disabled={!signed}>
-              ✅ Cerrar Intervención
-            </button>
-            <button className="btn btn-red" onClick={() => { resetForm(); setView("select-item"); }}>
-              ⏹ Otro Ítem
-            </button>
-          </div>
-        </div>
-      );
+        );
+      };
 
-      // 📊 VISTA: DASHBOARD
-      const DashboardView = () => (
-        <div className="card">
-          <h3>📊 Reportes & Estadísticas</h3>
-          
+      // 📊 TAB: REPORTES
+      const renderReports = () => (
+        <div className="card section">
+          <h3>📊 Reportes</h3>
           <div className="stats-grid">
-            <div className="stat-card">
-              <div className="stat-value">{stats.total}</div>
-              <div className="stat-label">Intervenciones</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-value" style={{color:"var(--green)"}}>{stats.closed}</div>
-              <div className="stat-label">Cerradas</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-value" style={{color:"var(--yellow)"}}>{stats.open}</div>
-              <div className="stat-label">Pendientes</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-value">{VIT_BANK.length}</div>
-              <div className="stat-label">VITs Disponibles</div>
-            </div>
+            <div className="stat-card"><div className="stat-value">{stats.total}</div><div className="stat-label">Intervenciones</div></div>
+            <div className="stat-card"><div className="stat-value" style={{color:"var(--green)"}}>{stats.closed}</div><div className="stat-label">Cerradas</div></div>
+            <div className="stat-card"><div className="stat-value">{VIT_BANK.length}</div><div className="stat-label">VITs</div></div>
+            <div className="stat-card"><div className="stat-value">{syncStatus}</div><div className="stat-label">Estado</div></div>
           </div>
           
-          <div style={{marginTop:16}}>
-            <p className="text-sm" style={{marginBottom:8}}>📋 Últimas intervenciones:</p>
-            <div style={{maxHeight:200, overflowY:"auto"}}>
-              {Array.from({length: Math.min(5, stats.total)}).map((_,i) => (
-                <div key={i} style={{padding:8, background:"var(--input)", borderRadius:8, marginBottom:6, fontSize:"0.9rem"}}>
-                  <strong>VIT #{i+1}</strong> • {new Date().toLocaleDateString()} 
-                  <span className="status-badge status-closed" style={{marginLeft:8}}>Cerrada</span>
-                </div>
-              ))}
-              {stats.total === 0 && <p className="text-sm" style={{color:"#94A3B8"}}>Aún no hay intervenciones registradas</p>}
-            </div>
+          <p className="text-sm" style={{margin:"12px 0 8px"}}>📋 Recientes:</p>
+          <div style={{maxHeight:200, overflowY:"auto"}}>
+            {interventions.length > 0 ? interventions.map((int, i) => (
+              <div key={i} style={{padding:10, background:"var(--input)", borderRadius:8, marginBottom:6, fontSize:"0.9rem"}}>
+                <strong>{int.vit_name}</strong> • {int.date}
+                <span className="status-badge status-closed" style={{marginLeft:8, background:"var(--green)", color:"#0F172A"}}>✓</span>
+              </div>
+            )) : <p className="text-sm" style={{color:"#94A3B8"}}>Sin intervenciones aún</p>}
           </div>
           
-          <button className="btn btn-yellow mt-2" onClick={() => setView("home")}>
-            ← Volver al inicio
-          </button>
+          <button className="btn btn-outline mt-2" onClick={() => { loadStats(); }}>🔄 Actualizar</button>
+        </div>
+      );
+
+      // ⚙️ TAB: AJUSTES
+      const renderSettings = () => (
+        <div className="card section">
+          <h3>⚙️ Ajustes</h3>
           
-          <p className="text-sm" style={{marginTop:16, color:"#64748B", textAlign:"center"}}>
-            💡 Los datos se sincronizan automáticamente cuando hay conexión a internet
-          </p>
+          <p className="text-sm" style={{marginBottom:12}}>🔑 IA en tiempo real (opcional)</p>
+          <input placeholder="OpenRouter API Key" value={OPENROUTER_KEY} readOnly style={{background:"var(--card)", color:"#94A3B8"}} />
+          <p className="text-xs" style={{marginTop:4}}>Regístrate gratis en <a href="https://openrouter.ai" target="_blank" style={{color:"var(--blue)"}}>openrouter.ai</a></p>
+          
+          <div style={{margin:"16px 0", borderTop:"1px solid #334155", paddingTop:16}}>
+            <p className="text-sm" style={{marginBottom:8}}>🗄️ Datos locales</p>
+            <button className="btn btn-red btn-sm" onClick={async () => {
+              if(confirm("¿Eliminar TODAS las intervenciones locales?")) {
+                await db.interventions.clear();
+                loadStats();
+                alert("🗑️ Datos eliminados");
+              }
+            }}>🗑️ Borrar todo</button>
+          </div>
+          
+          <div style={{marginTop:16, padding:12, background:"var(--input)", borderRadius:10}}>
+            <p className="text-sm"><strong>Versión:</strong> 1.0.0</p>
+            <p className="text-xs" style={{color:"#94A3B8", marginTop:4}}>V&V COACH • Menserca • Chevron • HOP</p>
+          </div>
         </div>
       );
 
@@ -649,36 +594,41 @@
       // 🎬 RENDER PRINCIPAL
       // ═══════════════════════════════════════════════════════════
       return (
-        <div className="container">
-          <header>
-            <h1>🛡️ V&V COACH</h1>
-            <p>Menserca • Chevron • Enfoque HOP</p>
-          </header>
+        <>
+          {/* Tabs superiores */}
+          <nav className="tabs">
+            <button className={`tab ${activeTab==="home"?"active":""}`} onClick={()=>setActiveTab("home")}>
+              <span className="tab-icon">🏠</span>Inicio
+            </button>
+            <button className={`tab ${activeTab==="intervention"?"active":""}`} onClick={()=>setActiveTab("intervention")}>
+              <span className="tab-icon">🎯</span>Intervención
+            </button>
+            <button className={`tab ${activeTab==="reports"?"active":""}`} onClick={()=>setActiveTab("reports")}>
+              <span className="tab-icon">📊</span>Reportes
+            </button>
+            <button className={`tab ${activeTab==="settings"?"active":""}`} onClick={()=>setActiveTab("settings")}>
+              <span className="tab-icon">⚙️</span>Ajustes
+            </button>
+          </nav>
           
-          {view === "home" && <HomeView />}
-          {view === "select-vit" && <SelectVITView />}
-          {view === "select-item" && <SelectItemView />}
-          {view === "coach" && <CoachView />}
-          {view === "dashboard" && <DashboardView />}
-          
-          <footer>
-            <button className="btn btn-outline" onClick={() => setView("home")} style={{flex:1}}>🏠 Inicio</button>
-            <button className="btn" onClick={() => { resetForm(); setView("select-vit"); }} style={{flex:2}}>➕ Nueva</button>
-          </footer>
-        </div>
+          {/* Contenido principal */}
+          <div className="container">
+            {activeTab === "home" && renderHome()}
+            {activeTab === "intervention" && renderIntervention()}
+            {activeTab === "reports" && renderReports()}
+            {activeTab === "settings" && renderSettings()}
+          </div>
+        </>
       );
     }
 
-    // 🚀 Inicializar React
-    const root = ReactDOM.createRoot(document.getElementById("root"));
-    root.render(<App />);
+    // 🚀 Inicializar
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
 
-    // 📱 Registrar Service Worker para PWA offline
+    // 📱 Service Worker
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("/sw.js").then(reg => {
-          console.log("✅ Service Worker registrado:", reg.scope);
-        }).catch(err => console.log("❌ SW error:", err));
+        navigator.serviceWorker.register("/sw.js").catch(console.log);
       });
     }
   </script>
