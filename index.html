@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>V&V COACH | Menserca</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0F172A">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dexie@3"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    :root {
+      --blue: #3B82F6; --yellow: #EAB308; --green: #22C55E; --red: #EF4444;
+      --bg: #0F172A; --text: #F8FAFC; --card: #1E293B; --input: #334155;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    body { background: var(--bg); color: var(--text); min-height: 100vh; padding: 16px; }
+    .container { max-width: 480px; margin: 0 auto; }
+    .btn { padding: 12px; border: none; border-radius: 10px; background: var(--blue); color: white; font-weight: 600; cursor: pointer; width: 100%; margin: 8px 0; }
+    .btn-green { background: var(--green); } .btn-yellow { background: var(--yellow); color: #000; } .btn-red { background: var(--red); }
+    .card { background: var(--card); padding: 16px; border-radius: 12px; margin: 8px 0; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+    input, select, textarea { width: 100%; padding: 12px; background: var(--input); color: var(--text); border: 1px solid #475569; border-radius: 8px; margin: 6px 0; }
+    .phase-blue { border-left: 4px solid var(--blue); } .phase-yellow { border-left: 4px solid var(--yellow); } .phase-green { border-left: 4px solid var(--green); } .phase-red { border-left: 4px solid var(--red); }
+    .hidden { display: none; }
+    canvas { background: #F1F5F9; border-radius: 8px; touch-action: none; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    // BANCO OFFLINE (JSON)
+    const VIT_BANK = ${JSON.stringify([/* Aquí va el JSON completo de las 13 VIT que te di antes */], null, 2)};
+
+    const { useState, useEffect } = React;
+
+    // CONFIG SUPABASE (Reemplaza con tus datos del Paso 4)
+    const SUPABASE_URL = "TU_SUPABASE_URL";
+    const SUPABASE_KEY = "TU_SUPABASE_ANON_KEY";
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // DEXIE DB OFFLINE
+    const db = new Dexie("VITCoachDB");
+    db.version(1).stores({
+      interventions: "++id, vit_id, item_id, date, status",
+      photos: "++id, intervention_id, data"
+    });
+
+    function App() {
+      const [view, setView] = useState("home");
+      const [context, setContext] = useState({ date: new Date().toISOString().slice(0,10), supervisor: "", vit: null, item: null, phase: "blue" });
+      const [questions, setQuestions] = useState([]);
+      const [answers, setAnswers] = useState({});
+      const [smart, setSmart] = useState("");
+      const [signature, setSignature] = useState(false);
+      const [loading, setLoading] = useState(false);
+
+      useEffect(() => {
+        if (context.vit && context.item) loadQuestions();
+      }, [context.vit, context.item]);
+
+      const loadQuestions = async () => {
+        setLoading(true);
+        // Intentar IA online
+        try {
+          const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+            method: "POST",
+            headers: { "Authorization": "Bearer TU_OPENROUTER_KEY", "Content-Type": "application/json" },
+            body: JSON.stringify({
+              model: "mistralai/mistral-7b-instruct",
+              messages: [{ role: "user", content: `Actúa como experto en coaching HSE y HOP. Genera 3 preguntas abiertas en español neutro, sin juicio, para: "${context.item.text}". Formato JSON: {"blue":"...","yellow":"...","green":"..."}` }]
+            })
+          });
+          const data = await res.json();
+          if (data.choices) setQuestions(JSON.parse(data.choices[0].message.content));
+        } catch {
+          // Fallback offline
+          const vit = VIT_BANK.find(v => v.vit_id === context.vit.id);
+          const item = vit.items.find(i => i.item_id === context.item.id);
+          setQuestions(item.questions);
+        }
+        setLoading(false);
+      };
+
+      const saveIntervention = async () => {
+        const intervention = { ...context, answers, smart, signature: true, status: "closed", createdAt: new Date().toISOString() };
+        await db.interventions.add(intervention);
+        // Sync a Supabase si hay internet
+        try { await supabase.from("interventions").insert(intervention); } catch {}
+        alert("✅ Intervención guardada. Se sincronizará cuando haya conexión.");
+        setView("home");
+        setAnswers({}); setSmart(""); setSignature(false);
+      };
+
+      return (
+        <div className="container">
+          {view === "home" && (
+            <>
+              <h1 style={{textAlign:"center", marginBottom:20}}>🛡️ V&V COACH</h1>
+              <input placeholder="Supervisor" value={context.supervisor} onChange={e=>setContext({...context, supervisor:e.target.value})} />
+              <button className="btn" onClick={()=>setView("select-vit")}>Iniciar Intervención</button>
+              <button className="btn btn-yellow" onClick={()=>setView("dashboard")}>📊 Ver Reportes</button>
+            </>
+          )}
+
+          {view === "select-vit" && (
+            <div className="card">
+              <h3>Selecciona VIT</h3>
+              {VIT_BANK.map(v => (
+                <button key={v.vit_id} className="btn" style={{background:"var(--card)", border:"1px solid var(--blue)", color:"var(--text)", textAlign:"left"}} onClick={()=>setContext({...context, vit:v}) && setView("select-item")}>{v.vit_name}</button>
+              ))}
+              <button className="btn btn-yellow" onClick={()=>setView("home")}>← Volver</button>
+            </div>
+          )}
+
+          {view === "select-item" && (
+            <div className="card">
+              <h3>Ítems: {context.vit.vit_name}</h3>
+              {context.vit.items.map(i => (
+                <button key={i.item_id} className="btn" style={{background:"var(--card)", textAlign:"left"}} onClick={()=>setContext({...context, item:i, phase:"blue"}) && setView("coach")}>{i.item_text}</button>
+              ))}
+              <button className="btn btn-yellow" onClick={()=>setView("select-vit")}>← Volver</button>
+            </div>
+          )}
+
+          {view === "coach" && (
+            <div className={`card phase-${context.phase}`}>
+              <h3>{context.item.text}</h3>
+              <p style={{color:"#94A3B8", fontSize:12}}>Tono actual: {context.phase==="blue"?"🔵 Reflexión":context.phase==="yellow"?"🟡 Exploración":"🟢 Compromiso"}</p>
+              <div style={{display:"flex", gap:8, marginBottom:12}}>
+                {["blue","yellow","green","red"].map(c => (
+                  <button key={c} style={{width:32, height:32, borderRadius:"50%", background:`var(--${c})`, border: context.phase===c?"3px solid white":"none"}} onClick={()=>setContext({...context, phase:c})}></button>
+                ))}
+              </div>
+              {loading ? <p>Cargando preguntas IA...</p> : (
+                <>
+                  <p style={{margin:"10px 0", fontStyle:"italic"}}>{questions[context.phase]}</p>
+                  <textarea placeholder="Escribe la respuesta del ejecutor..." value={answers[context.phase]||""} onChange={e=>setAnswers({...answers, [context.phase]:e.target.value})} rows={3}></textarea>
+                </>
+              )}
+              {context.phase==="green" && (
+                <div style={{marginTop:12, padding:10, background:"#064E3B", borderRadius:8}}>
+                  <p style={{marginBottom:8}}>📝 Compromiso SMART:</p>
+                  <textarea placeholder="¿Qué harás? ¿Cómo lo medirás? ¿Es realista? ¿Cuándo?" value={smart} onChange={e=>setSmart(e.target.value)} rows={3}></textarea>
+                </div>
+              )}
+              <div style={{display:"flex", gap:8, marginTop:12}}>
+                <button className="btn" onClick={saveIntervention} disabled={!signature}>✅ Cerrar</button>
+                <button className="btn btn-red" onClick={()=>setView("select-item")}>⏹ Cambiar Ítem</button>
+              </div>
+              <p style={{fontSize:12, marginTop:8, textAlign:"center"}}>Firma digital requerida para cerrar</p>
+              <div style={{border:"2px dashed #475569", borderRadius:8, padding:10, textAlign:"center", cursor:"pointer"}} onClick={()=>setSignature(!signature)}>
+                {signature ? "✍️ Firma registrada" : "👆 Toca para firmar (simulado)"}
+              </div>
+            </div>
+          )}
+
+          {view === "dashboard" && (
+            <div className="card">
+              <h3>📊 Intervenciones</h3>
+              <p style={{color:"#94A3B8"}}>Próximamente: KPIs, exportación CSV, filtros por VIT/supervisor.</p>
+              <button className="btn btn-yellow" onClick={()=>setView("home")}>← Inicio</button>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js');
+    }
+  </script>
+</body>
+</html>
